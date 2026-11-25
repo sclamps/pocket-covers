@@ -17,12 +17,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400..800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
-/* VOICE practice tool, flat and direct like a modern plugin
-   IDEA a dark flat plugin window: hairline dividers, red value tags, one control panel
-   PICTURE the drum video, as large as the screen allows
-   COLOUR charcoal greys and white; soft desert hues (turquoise, sage, dusty rose, sky) as pale tints for lines and readouts, deepened shades for any fill with white text (4.5:1)
-   TYPE Archivo for labels and names, IBM Plex Mono for numbers
-   LAYOUT three views: library grid, new breakdown flow, practice player (video on top, sections and parts left, controls right) */
 :root{color-scheme:dark;--bg:#1a1a1a;--raise:#222222;--hover:#2a2a2a;--ink:#ffffff;--soft:#cccccc;--mute:#8d8d8d;--line:#3d3d3d;--line2:#4d4d4d;--red:#4c8075;--hot:#3f6d63;--tint:#7fb3a8;--sage:#9aaa82;--sageD:#6c7c54;--rose:#c98b84;--roseD:#b35c52;--sky:#8eafc4;--skyD:#4e7a96;--terra:#c86f4c;--terraD:#b85c38;--sc:#4c8075;--scl:#7fb3a8;--yellow:#e3c46b;--roseH:#9e4f46;--off:#454545}
 *{box-sizing:border-box;min-width:0}
 html,body{margin:0;height:100%}
@@ -891,7 +885,6 @@ document.addEventListener("keydown",e=>{
   else if(e.key==="ArrowDown"){e.preventDefault();setRate(rate-0.05)}
 });
 
-window.__pc={vf:()=>vfDrift,items:()=>items,findBeats,onsetEnvelope,musicSpan,findSections};
 requestAnimationFrame(frame);
 loadItems().then(route);
 if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){navigator.serviceWorker.register("sw.js").catch(()=>{})}
