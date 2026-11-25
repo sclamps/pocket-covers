@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Learn any drum cover, one part at a time.">
+<meta name="theme-color" content="#1a1a1a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pocket Covers">
+<title>Pocket Covers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400..800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE practice tool, flat and direct like a modern plugin
+   IDEA a dark flat plugin window: hairline dividers, red value tags, one control panel
+   PICTURE the drum video, as large as the screen allows
+   COLOUR charcoal greys and white; soft desert hues (turquoise, sage, dusty rose, sky) as pale tints for lines and readouts, deepened shades for any fill with white text (4.5:1)
+   TYPE Archivo for labels and names, IBM Plex Mono for numbers
+   LAYOUT three views: library grid, new breakdown flow, practice player (video on top, sections and parts left, controls right) */
+:root{color-scheme:dark;--bg:#1a1a1a;--raise:#222222;--hover:#2a2a2a;--ink:#ffffff;--soft:#cccccc;--mute:#8d8d8d;--line:#3d3d3d;--line2:#4d4d4d;--red:#4c8075;--hot:#3f6d63;--tint:#7fb3a8;--sage:#9aaa82;--sageD:#6c7c54;--rose:#c98b84;--roseD:#b35c52;--sky:#8eafc4;--skyD:#4e7a96;--terra:#c86f4c;--terraD:#b85c38;--sc:#4c8075;--scl:#7fb3a8;--yellow:#e3c46b;--roseH:#9e4f46;--off:#454545}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 Archivo,system-ui,sans-serif;overflow-x:clip}
+button{font:inherit;color:inherit}
+.lab{font-size:13px;color:var(--mute);font-weight:500}
+.num{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600}
+.unit{max-width:1440px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) max(16px,2vw,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,2vw,env(safe-area-inset-left));display:grid;gap:12px}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 24px}
+h1{margin:0;font-size:20px;line-height:1.2;font-weight:800;letter-spacing:-.01em}
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 18px;color:var(--mute);font-size:13px}
+.meta span{white-space:nowrap}
+kbd{font:600 11px "IBM Plex Mono",monospace;border:1px solid var(--line2);border-bottom-width:2px;border-radius:4px;padding:1px 5px;color:var(--soft)}
+.bezel{background:#0d0d0d;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.vid{position:relative;aspect-ratio:1180/662;background:#0d0d0d;cursor:pointer}
+.vid video,.vid canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.vid canvas{display:none}
+.vid.blend canvas{display:block}
+.vid.blend video{opacity:0}
+.cover{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.45);border:0;cursor:pointer}
+.cover span{display:flex;align-items:center;gap:10px;background:var(--roseD);color:#fff;padding:14px 24px;border-radius:8px;font-weight:700;font-size:16px}
+.cover:hover span{background:var(--roseH)}
+.cover[hidden]{display:none}
+/* sections: equal width segmented control */
+.map{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;padding:4px;border:1px solid var(--line);border-radius:10px;background:var(--raise);touch-action:pan-y;user-select:none}
+.seg{position:relative;min-height:46px;border:0;border-radius:7px;background:transparent;cursor:pointer;font-weight:650;font-size:15px;overflow:hidden;padding:0 8px}
+.seg span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg:hover{background:var(--hover)}
+.seg.cur{background:var(--c);color:#fff}
+.seg .prog{position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--cl)}
+.seg.cur .prog{background:#fff}
+.seg:focus-visible,.chip:focus-visible,.bar:focus-visible,.sw:focus-visible,.play:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+/* lower area: navigation left, control panel right (original layout) */
+.lower{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(400px,1fr);grid-template-areas:"lab ." "map deck" "parts deck";grid-template-rows:auto auto 1fr;gap:12px;align-items:start}
+.lower>.sechead{grid-area:lab;margin:0 0 -6px}
+.lower>.map{grid-area:map}
+.lower>.parts{grid-area:parts}
+.lower>.deck{grid-area:deck}
+.panel{border:1px solid var(--line);border-radius:10px;background:var(--raise);padding:14px 16px}
+.lab{display:block}
+/* parts */
+.parts{display:grid;gap:10px;align-content:start}
+h2{margin:0;font-size:17px;font-weight:800}
+.chips{display:grid;gap:6px}
+.chiprow{display:flex;flex-wrap:wrap;gap:6px}
+.chip{min-height:44px;min-width:56px;padding:4px 16px;border-radius:8px;border:1px solid var(--line2);background:var(--bg);cursor:pointer;font-weight:650;font-size:14px;white-space:nowrap}
+.chip:hover{background:var(--hover)}
+.chip[aria-pressed=true]{background:var(--sc);border-color:var(--sc);color:#fff}
+.barsrow{display:grid;gap:4px}
+.bar{min-height:40px;border-radius:6px;border:1px solid var(--line2);background:var(--bg);cursor:pointer;font:600 13px "IBM Plex Mono",monospace;position:relative}
+.bar:hover{background:var(--hover)}
+.bar.in{background:color-mix(in srgb,var(--sc) 50%,var(--bg));border-color:var(--scl)}
+.bar.now::after{content:"";position:absolute;left:8px;right:8px;bottom:4px;height:2px;border-radius:2px;background:#fff}
+.hint{margin:0;font-size:13px;color:var(--mute)}
+/* control panel */
+.deck{display:grid;gap:14px;align-content:start}
+.display{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+.play{flex:none;width:52px;height:52px;border-radius:50%;border:0;background:var(--red);color:#fff;cursor:pointer;display:grid;place-items:center}
+.play:hover{background:var(--hot)}
+.knob{flex:none;width:58px;height:58px;touch-action:none;cursor:ns-resize;border-radius:8px}
+.knob:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.tempo{display:grid;gap:4px;justify-items:start}
+.tempo .tag{font:600 16px/1 "IBM Plex Mono",monospace;background:var(--red);color:#fff;padding:6px 8px;border-radius:5px;white-space:nowrap}
+.readouts{flex-basis:100%;display:flex;gap:28px;padding-top:12px;border-top:1px solid var(--line)}
+.readouts div{display:grid;gap:2px}
+.readouts b{font:600 20px/1.1 "IBM Plex Mono",monospace;white-space:nowrap}
+.readouts b.hot{color:var(--ink)}
+.readouts .secname{font-family:Archivo,sans-serif;font-weight:750}
+.switches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.sw{display:flex;align-items:center;justify-content:center;gap:9px;min-height:44px;padding:0 10px;border-radius:8px;border:1px solid var(--line2);background:var(--bg);cursor:pointer;font-weight:650;font-size:14px;white-space:nowrap}
+.sw:hover{background:var(--hover)}
+.sw i{width:9px;height:9px;border-radius:50%;background:var(--off);flex:none}
+.sw[aria-pressed=true] i{background:var(--yellow);box-shadow:0 0 6px var(--yellow)}
+.vol{display:flex;align-items:center;gap:12px}
+.vol label{white-space:nowrap}
+.nudge{display:flex;align-items:center;gap:8px}
+.nudge .lab{margin-right:auto;white-space:nowrap}
+.nudge .sw{min-height:40px;padding:0 14px}
+.nudge b{min-width:64px;text-align:center;font-size:15px;white-space:nowrap}
+input[type=range]{flex:1;accent-color:var(--yellow);height:28px}
+.status{margin:0;font-size:13px;color:var(--soft)}
+.status:empty{display:none}
+/* one screen layout on laptops */
+@media(min-width:900px) and (min-height:620px){
+  body[data-view=practice]{overflow:hidden}
+  #pracView{height:100%;grid-template-rows:auto 33.333vh minmax(0,1fr)}
+  #pracView .bezel{min-height:0;display:grid}
+  #pracView .vid{aspect-ratio:auto;height:100%}
+  #pracView .seg{min-height:clamp(46px,6.5vh,64px);font-size:clamp(15px,1.9vh,18px)}
+  #pracView .parts{gap:clamp(10px,1.8vh,18px)}
+  #pracView .chip{min-height:clamp(44px,5.5vh,54px);padding-inline:clamp(16px,1.8vh,22px);font-size:clamp(14px,1.8vh,17px)}
+  #pracView .bar{min-height:clamp(40px,6vh,58px);font-size:clamp(13px,1.6vh,16px)}
+  #pracView .deck{gap:clamp(12px,1.6vh,16px)}
+  #pracView .display{gap:clamp(12px,1.6vh,16px)}
+  #pracView .play{width:clamp(52px,6.5vh,64px);height:clamp(52px,6.5vh,64px)}
+  #pracView .play svg{width:clamp(20px,2.4vh,24px);height:clamp(20px,2.4vh,24px)}
+  #pracView .knob{width:clamp(58px,7.5vh,74px);height:clamp(58px,7.5vh,74px)}
+  #pracView .tempo .tag{font-size:clamp(16px,2vh,19px)}
+  #pracView .readouts b{font-size:clamp(20px,2.6vh,24px)}
+  #pracView .sw{min-height:44px;font-size:14px}
+}
+@media(max-width:899px){
+  .lower{grid-template-columns:minmax(0,1fr);grid-template-areas:"lab" "map" "parts" "deck";grid-template-rows:none}
+}
+@media(max-width:480px){
+  .unit{gap:10px;padding:10px 12px 14px}
+  .seg{font-size:13px;padding:0 4px}
+  .sw{padding:0 6px;font-size:13px;gap:6px}
+  .meta .keys{display:none}
+  .panel{padding:12px}
+}
+@media(prefers-reduced-motion:reduce){.sw[aria-pressed=true] i{box-shadow:none}}
+
+/* views */
+.view{display:none}
+body[data-view=library] #libView,body[data-view=new] #newView,body[data-view=practice] #pracView{display:grid}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid var(--line2);background:var(--bg);cursor:pointer;font-weight:700;font-size:15px;text-decoration:none;color:var(--ink);white-space:nowrap}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn.primary:hover{background:var(--hot);border-color:var(--hot)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--soft);padding:0 10px}
+.btn.ghost:hover{background:var(--hover)}
+.btn:focus-visible,.card .open:focus-visible,.addtile:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn[disabled]{opacity:.5;cursor:default}
+.titlebar{display:flex;align-items:center;gap:12px;min-width:0}
+.titlebar h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* library */
+#libView{max-width:1240px;gap:22px;padding-top:20px;padding-bottom:40px}
+.libtop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.libtop h1{font-size:26px}
+.continue{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:22px;align-items:center;padding:14px}
+.thumb{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:7px;background:#0d0d0d;border:1px solid var(--line)}
+.continue h2{font-size:24px;line-height:1.15;margin:4px 0 16px}
+.continue .meta2{color:var(--soft);font-size:14px;margin:0 0 16px}
+.sectitle{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.sectitle h2{font-size:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.card{border:1px solid var(--line);border-radius:10px;background:var(--raise);overflow:hidden;display:grid;grid-template-rows:auto 1fr}
+.card .open{display:grid;gap:0;border:0;background:transparent;padding:0;text-align:left;cursor:pointer}
+.card .open .thumb{border:0;border-radius:0;border-bottom:1px solid var(--line)}
+.card .open:hover .thumb{opacity:.85}
+.card .body{padding:12px 14px 4px;display:grid;gap:3px}
+.card b{font-size:16px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .sub{font-size:13px;color:var(--mute)}
+.card .actions{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 8px 8px 14px;min-height:48px}
+.badge{font-size:12px;font-weight:700;color:var(--sage);border:1px solid color-mix(in srgb,var(--sage) 60%,transparent);border-radius:5px;padding:2px 7px}
+.btn.ghost.del{color:var(--rose)}
+.confirm{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--soft)}
+.addtile{border:2px dashed var(--line2);border-radius:10px;background:transparent;cursor:pointer;display:grid;place-items:center;align-content:center;gap:6px;min-height:240px;color:var(--soft);font-weight:700;font-size:16px;text-align:center;padding:20px}
+.addtile:hover,.addtile.over{border-color:var(--tint);color:var(--ink)}
+.addtile small{font-weight:500;font-size:13px;color:var(--mute)}
+.plus{width:44px;height:44px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:26px;line-height:1}
+.note{font-size:13px;color:var(--mute);margin:0}
+body.dragging #libView .addtile{border-color:var(--tint)}
+/* new breakdown */
+#newView{max-width:900px;gap:22px;padding-top:20px;padding-bottom:40px}
+.drop{border:2px dashed var(--line2);border-radius:12px;min-height:340px;display:grid;place-items:center;align-content:center;gap:12px;text-align:center;padding:30px;background:var(--raise)}
+.drop.over{border-color:var(--tint)}
+.drop h2{font-size:22px}
+.drop p{margin:0;color:var(--mute);font-size:14px}
+.namegrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px;align-items:start}
+.preview{width:100%;aspect-ratio:16/9;background:#0d0d0d;border:1px solid var(--line);border-radius:8px;object-fit:contain}
+.form{display:grid;gap:14px}
+.field{display:grid;gap:6px}
+.field label{font-size:13px;color:var(--soft);font-weight:600}
+.field input{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line2);border-radius:8px;min-height:44px;padding:0 12px}
+.field input:focus{outline:2px solid var(--tint);outline-offset:0;border-color:var(--tint)}
+.formbtns{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.fileinfo{font-size:13px;color:var(--mute);margin:8px 0 0}
+.stages{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.stages li{display:flex;align-items:center;gap:12px;font-size:16px;color:var(--mute)}
+.stages li i{width:22px;height:22px;border-radius:50%;border:2px solid var(--line2);flex:none;display:grid;place-items:center;font-style:normal;font-size:13px;color:#fff}
+.stages li.active{color:var(--ink)}
+.stages li.active i{border-color:var(--tint);border-top-color:transparent;animation:spin .8s linear infinite}
+.stages li.done{color:var(--soft)}
+.stages li.done i{background:var(--red);border-color:var(--red);color:#fff}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.progress span{display:block;height:100%;width:0;background:var(--tint);transition:width .3s}
+.err{border:1px solid var(--rose);background:color-mix(in srgb,var(--roseD) 22%,var(--bg));border-radius:8px;padding:12px 14px;color:var(--ink);font-size:14px}
+[hidden]{display:none!important}
+@media(max-width:700px){
+  .continue{grid-template-columns:minmax(0,1fr)}
+  .namegrid{grid-template-columns:minmax(0,1fr)}
+}
+@media(prefers-reduced-motion:reduce){.stages li.active i{animation:none;border-top-color:var(--tint)}.progress span{transition:none}}
+</style>
+</head>
+<body data-view="library">
+
+<main class="unit view" id="libView">
+  <div class="libtop">
+    <h1>Pocket Covers</h1>
+    <button class="btn primary" id="libNew"><span aria-hidden="true">+</span> New breakdown</button>
+  </div>
+
+  <section class="panel continue" id="contCard" hidden>
+    <img class="thumb" id="contThumb" alt="">
+    <div>
+      <span class="lab">Pick up where you left off</span>
+      <h2 id="contTitle">Sample cover</h2>
+      <button class="btn primary" id="contGo"><svg width="14" height="14" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 2l12 7-12 7z" fill="currentColor"/></svg>Resume</button>
+    </div>
+  </section>
+
+  <section>
+    <div class="grid" id="libGrid"></div>
+  </section>
+  <p class="note" id="libNote">Breakdowns are saved in this browser on this device only. Clearing your browser data removes them.</p>
+</main>
+
+<main class="unit view" id="newView">
+  <div class="titlebar">
+    <a class="btn ghost" href="#library"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Library</a>
+    <h1>New breakdown</h1>
+  </div>
+
+  <section class="drop" id="stepPick">
+    <span class="plus" aria-hidden="true">+</span>
+    <h2>Drop a drum cover video here</h2>
+    <p>MP4, MOV or WebM. Screen recordings from your phone work great.</p>
+    <label class="btn primary" for="fileIn">Choose a video</label>
+    <input type="file" id="fileIn" accept="video/*" hidden>
+  </section>
+
+  <section class="namegrid" id="stepName" hidden>
+    <div>
+      <video class="preview" id="prevVid" muted playsinline loop></video>
+      <p class="fileinfo" id="fileInfo"></p>
+    </div>
+    <form class="form" id="nameForm">
+      <div class="field"><label for="fTitle">Title</label><input id="fTitle" required maxlength="80"></div>
+      <div class="field"><label for="fDrummer">Drummer (optional)</label><input id="fDrummer" maxlength="80"></div>
+      <div class="formbtns">
+        <button class="btn primary" type="submit">Break it down</button>
+        <button class="btn" type="button" id="reChoose">Choose a different video</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel" id="stepProc" hidden style="display:grid;gap:18px;padding:22px">
+    <h2 id="procTitle">Breaking it down</h2>
+    <div class="progress"><span id="procBar"></span></div>
+    <ul class="stages" id="stages">
+      <li data-s="read"><i></i>Reading the audio</li>
+      <li data-s="trim"><i></i>Trimming silence at the start and end</li>
+      <li data-s="beat"><i></i>Finding the beat</li>
+      <li data-s="sections"><i></i>Finding sections</li>
+      <li data-s="save"><i></i>Saving to your library</li>
+    </ul>
+    <div class="err" id="procErr" hidden></div>
+    <p class="note">This usually takes under a minute. In this prototype it runs in your browser, so keep this tab open.</p>
+  </section>
+</main>
+
+<main class="unit view" id="pracView">
+  <div class="top">
+    <div class="titlebar">
+      <a class="btn ghost" href="#library"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Library</a>
+      <h1 id="pTitle">Sample cover</h1>
+    </div>
+    <div class="meta"><span class="num" id="mBpm">152 BPM</span><span class="num">4/4</span><span id="mBars">38 bars, auto detected</span><span class="keys"><kbd>Space</kbd> play &nbsp;<kbd>&larr;</kbd><kbd>&rarr;</kbd> section &nbsp;<kbd>&uarr;</kbd><kbd>&darr;</kbd> tempo</span></div>
+  </div>
+
+  <div class="bezel">
+    <div class="vid blend" id="vid">
+      <video id="v" playsinline muted preload="auto"></video>
+      <canvas id="cv"></canvas>
+    </div>
+  </div>
+
+  <div class="lower">
+    <span class="lab sechead">Sections</span>
+    <div class="map" id="map" role="group" aria-label="Sections"></div>
+    <div class="panel parts">
+      <h2 id="partsTitle">Blocks</h2>
+      <div class="chips" id="chips"></div>
+      <div class="barsrow" id="barsrow"></div>
+      <p class="hint" id="blockHint"></p>
+    </div>
+
+    <div class="panel deck">
+      <div class="display">
+        <button class="play" id="play" aria-label="Play"><svg id="pIcon" width="22" height="22" viewBox="0 0 24 24"><path d="M6 3l15 9-15 9z" fill="currentColor"/></svg></button>
+        <svg class="knob" id="knob" viewBox="0 0 140 140" role="slider" tabindex="0" aria-label="Tempo" aria-valuemin="25" aria-valuemax="100" aria-valuenow="100">
+          <title>Drag up or down to change tempo, double click for 100%</title>
+          <circle cx="70" cy="70" r="60" fill="none" stroke="var(--line2)" stroke-width="10" stroke-dasharray="283 400" transform="rotate(135 70 70)" stroke-linecap="round"/>
+          <circle id="kArc" cx="70" cy="70" r="60" fill="none" stroke="var(--tint)" stroke-width="10" stroke-dasharray="0 400" transform="rotate(135 70 70)" stroke-linecap="round"/>
+          <circle cx="70" cy="70" r="42" fill="#2e2e2e" stroke="var(--line2)" stroke-width="2"/>
+          <line id="kPtr" x1="70" y1="70" x2="70" y2="36" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+        </svg>
+        <div class="tempo"><label class="lab" for="knob">Tempo</label><div class="tag" id="tVal">100%</div></div>
+        <div class="readouts">
+          <div><span class="lab">BPM</span><b id="cBpm" class="hot">152</b></div>
+          <div><span class="lab">Section</span><b id="cSec" class="secname">Verse 1</b></div>
+        </div>
+      </div>
+      <div class="switches">
+        <button class="sw" id="swCount" aria-pressed="true"><i></i>Count in</button>
+        <button class="sw" id="swLoop" aria-pressed="true"><i></i>Loop</button>
+      </div>
+      <p class="status" id="status"></p>
+    </div>
+  </div>
+</main>
+
+<script src="stretch.js"></script>
+<script>
+{
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+// ---------- sample breakdown ----------
+const SAMPLE={id:"sample",sample:true,title:"Sample cover",song:"",drummer:"",thumb:"thumb.jpg",created:0,
+  duration:61.48,bpm:152,
+  beats:[0.598,0.993,1.399,1.805,2.212,2.63,3.024,3.419,3.826,4.209,4.627,5.021,5.439,5.834,6.229,6.612,7.007,7.413,7.819,8.226,8.62,9.027,9.445,9.851,10.246,10.652,11.047,11.442,11.848,12.254,12.649,13.055,13.45,13.857,14.274,14.669,15.064,15.482,15.888,16.271,16.655,17.072,17.479,17.862,18.257,18.651,19.058,19.441,19.824,20.23,20.637,21.02,21.415,21.809,22.216,22.61,23.017,23.446,23.853,24.271,24.677,25.083,25.49,25.896,26.279,26.686,27.104,27.498,27.893,28.276,28.671,29.066,29.437,29.843,30.238,30.633,31.016,31.388,31.771,32.154,32.537,32.943,33.338,33.733,34.116,34.499,34.894,35.277,35.66,36.066,36.473,36.856,37.239,37.622,38.017,38.4,38.795,39.201,39.607,40.014,40.42,40.803,41.221,41.604,41.999,42.394,42.789,43.172,43.566,43.961,44.344,44.739,45.122,45.529,45.935,46.318,46.713,47.108,47.514,47.897,48.303,48.698,49.104,49.488,49.882,50.277,50.672,51.055,51.461,51.856,52.274,52.657,53.04,53.412,53.818,54.213,54.596,54.991,55.385,55.792,56.187,56.581,56.976,57.359,57.742,58.149,58.543,58.938,59.333,59.728,60.122,60.517,60.912,61.307],
+  sections:[["Intro",0,3],["Verse 1",4,15],["Chorus",16,23],["Verse 2",24,35],["Chorus 2",36,37]]};
+
+// ---------- storage (this device only) ----------
+const DB={db:null,ok:typeof indexedDB!=="undefined",
+  open(){if(this.db)return Promise.resolve(this.db);return new Promise((res,rej)=>{const r=indexedDB.open("pocket-covers",1);r.onupgradeneeded=()=>r.result.createObjectStore("items",{keyPath:"id"});r.onsuccess=()=>{this.db=r.result;res(r.result)};r.onerror=()=>rej(r.error)})},
+  async run(mode,fn){const db=await this.open();return new Promise((res,rej)=>{const t=db.transaction("items",mode),q=fn(t.objectStore("items"));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)})},
+  all(){return this.run("readonly",s=>s.getAll())},put(it){return this.run("readwrite",s=>s.put(it))},del(id){return this.run("readwrite",s=>s.delete(id))}};
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let items=[SAMPLE];
+const urls={};
+const videoUrl=it=>it.sample?"video.mp4":(urls[it.id]||(urls[it.id]=URL.createObjectURL(it.file)));
+const lastOf=it=>LS.get("pc-state-"+it.id,{}).last||0;
+
+async function loadItems(){
+  if(!DB.ok)return;
+  try{const all=await DB.all();items=[SAMPLE,...all.sort((a,b)=>b.created-a.created)]}
+  catch(e){DB.ok=false;$("libNote").textContent="Saving is blocked in this browser, so new breakdowns only last until you close the tab."}
+}
+
+// ---------- routing ----------
+function show(view){
+  if(view!=="practice"&&typeof pause==="function")pause();
+  document.body.dataset.view=view;window.scrollTo(0,0);
+}
+function route(){
+  const h=location.hash.slice(1);
+  if(h.startsWith("practice-")){const it=items.find(x=>x.id===h.slice(9));if(it){show("practice");openItem(it);return}}
+  if(h==="new"){show("new");if(!pendingFile)setStep("pick");return}
+  show("library");renderLibrary();
+}
+addEventListener("hashchange",route);
+
+// ---------- library ----------
+const fmtDur=s=>Math.floor(s/60)+":"+String(Math.round(s%60)).padStart(2,"0");
+function ago(t){if(!t)return "";const m=Math.round((Date.now()-t)/60000);if(m<1)return "Practiced just now";if(m<60)return `Practiced ${m} min ago`;const h=Math.round(m/60);if(h<24)return `Practiced ${h} hr ago`;const d=Math.round(h/24);return `Practiced ${d} day${d>1?"s":""} ago`}
+let confirmId=null;
+function renderLibrary(){
+  const sorted=[...items].sort((a,b)=>lastOf(b)-lastOf(a)||b.created-a.created);
+  const recent=sorted.find(it=>lastOf(it));
+  $("contCard").hidden=!recent;
+  if(recent){const st=LS.get("pc-state-"+recent.id,{});const sc=st.sec===-1?["All"]:recent.sections[st.sec??0];
+    $("contThumb").src=recent.thumb;$("contTitle").textContent=recent.title;
+    $("contGo").onclick=()=>{location.hash="practice-"+recent.id}}
+  $("libGrid").innerHTML=`<button class="addtile" id="addTile"><span class="plus" aria-hidden="true">+</span>New breakdown<small>or drop a video anywhere on this page</small></button>`+sorted.map(it=>{
+    const sub=it.drummer||"";
+    return `<article class="card"><button class="open" data-id="${esc(it.id)}"><img class="thumb" src="${esc(it.thumb)}" alt=""><div class="body"><b>${esc(it.title)}</b>${sub?`<span class="sub">${esc(sub)}</span>`:""}<span class="sub num">${fmtDur(it.duration)}&nbsp;&nbsp;${Math.round(it.bpm)} BPM&nbsp;&nbsp;${it.sections.length} sections</span></div></button>
+    <div class="actions"><span class="sub">${esc(ago(lastOf(it)))}</span>${it.sample?"":confirmId===it.id?`<span class="confirm">Delete?<button class="btn ghost" data-del="${esc(it.id)}">Yes</button><button class="btn ghost" data-cancel="1">No</button></span>`:`<button class="btn ghost del" data-ask="${esc(it.id)}" aria-label="Delete ${esc(it.title)}">Delete</button>`}</div></article>`}).join("")
+;
+}
+$("libGrid").addEventListener("click",async e=>{
+  const o=e.target.closest(".open");if(o){location.hash="practice-"+o.dataset.id;return}
+  if(e.target.closest("#addTile")){location.hash="new";return}
+  const a=e.target.closest("[data-ask]");if(a){confirmId=a.dataset.ask;renderLibrary();return}
+  if(e.target.closest("[data-cancel]")){confirmId=null;renderLibrary();return}
+  const d=e.target.closest("[data-del]");if(d){const id=d.dataset.del;confirmId=null;items=items.filter(x=>x.id!==id);if(urls[id]){URL.revokeObjectURL(urls[id]);delete urls[id]}try{localStorage.removeItem("pc-state-"+id)}catch(err){}if(DB.ok)try{await DB.del(id)}catch(err){}renderLibrary()}
+});
+$("libNew").onclick=()=>{location.hash="new"};
+// drop a video anywhere on the library or new screens
+let dragDepth=0;
+addEventListener("dragenter",e=>{if(document.body.dataset.view==="practice")return;e.preventDefault();dragDepth++;document.body.classList.add("dragging");$("stepPick").classList.add("over")});
+addEventListener("dragleave",()=>{if(--dragDepth<=0){dragDepth=0;document.body.classList.remove("dragging");$("stepPick").classList.remove("over")}});
+addEventListener("dragover",e=>{if(document.body.dataset.view!=="practice")e.preventDefault()});
+addEventListener("drop",e=>{if(document.body.dataset.view==="practice")return;e.preventDefault();dragDepth=0;document.body.classList.remove("dragging");$("stepPick").classList.remove("over");const f=e.dataTransfer.files[0];if(f)chooseFile(f)});
+
+// ---------- new breakdown flow ----------
+let pendingFile=null,busy=false;
+function setStep(s){$("stepPick").hidden=s!=="pick";$("stepName").hidden=s!=="name";$("stepProc").hidden=s!=="proc";if(s==="pick"){pendingFile=null;$("fileIn").value="";$("prevVid").removeAttribute("src")}}
+function chooseFile(f){
+  if(busy)return;
+  if(!f.type.startsWith("video/")&&!/\.(mp4|mov|m4v|webm)$/i.test(f.name)){location.hash="new";setStep("pick");alertPick("That file isn't a video. Try an MP4, MOV or WebM.");return}
+  pendingFile=f;
+  if(location.hash!=="#new")location.hash="new";
+  setStep("name");
+  $("prevVid").src=URL.createObjectURL(f);$("prevVid").play().catch(()=>{});
+  $("fileInfo").textContent=`${f.name}, ${(f.size/1048576).toFixed(1)} MB`;
+  $("fTitle").value=f.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ").replace(/\s+/g," ").trim().slice(0,80)||"Untitled cover";
+  $("fDrummer").value="";
+  setTimeout(()=>{$("fTitle").focus();$("fTitle").select()},50);
+}
+function alertPick(t){let p=$("stepPick").querySelector(".err");if(!p){p=document.createElement("div");p.className="err";$("stepPick").appendChild(p)}p.textContent=t}
+$("fileIn").onchange=e=>{const f=e.target.files[0];if(f)chooseFile(f)};
+$("reChoose").onclick=()=>{setStep("pick");$("fileIn").click()};
+$("nameForm").addEventListener("submit",e=>{e.preventDefault();if(pendingFile)processFile(pendingFile)});
+
+function stage(name,state){const li=$("stages").querySelector(`[data-s="${name}"]`);li.className=state;li.firstElementChild.textContent=state==="done"?"✓":""}
+async function processFile(f){
+  busy=true;$("prevVid").pause();setStep("proc");$("procErr").hidden=true;$("procTitle").textContent="Breaking it down";
+  $("stages").querySelectorAll("li").forEach(li=>{li.className="";li.firstElementChild.textContent=""});
+  const bar=$("procBar"),setP=p=>bar.style.width=p+"%";setP(4);
+  try{
+    stage("read","active");
+    const buf=await f.arrayBuffer();
+    const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+    const audio=await new OAC(1,1,44100).decodeAudioData(buf.slice(0));
+    stage("read","done");setP(25);await sleep(150);
+    stage("trim","active");
+    const env=onsetEnvelope(audio);
+    const span=musicSpan(env);
+    stage("trim","done");setP(45);await sleep(150);
+    stage("beat","active");await sleep(30);
+    const grid=findBeats(env,span);
+    if(grid.beats.length<16)throw new Error("short");
+    stage("beat","done");setP(70);await sleep(150);
+    stage("sections","active");await sleep(30);
+    const sections=findSections(env,grid.beats);
+    stage("sections","done");setP(85);
+    stage("save","active");
+    const thumb=await grabThumb(f,audio.duration);
+    const it={id:"u"+Date.now().toString(36),title:$("fTitle").value.trim()||"Untitled cover",drummer:$("fDrummer").value.trim(),
+      created:Date.now(),duration:audio.duration,bpm:grid.bpm,beats:grid.beats,sections,thumb,file:f};
+    if(DB.ok){try{await DB.put(it);if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{})}catch(err){DB.ok=false;$("libNote").textContent="Saving failed in this browser, so new breakdowns only last until you close the tab."}}
+    items.push(it);
+    stage("save","done");setP(100);await sleep(400);
+    busy=false;pendingFile=null;
+    location.hash="practice-"+it.id;
+  }catch(err){
+    busy=false;
+    $("procTitle").textContent="That one didn't work";
+    $("procErr").hidden=false;
+    $("procErr").innerHTML=(String(err&&err.message)==="short"?"We couldn't find a steady beat. Try a longer clip with the full band or backing track playing.":"We couldn't read the audio in this file. Try exporting it as an MP4.")+` <button class="btn ghost" id="procBack">Choose another video</button>`;
+    $("procBack").onclick=()=>setStep("pick");
+  }
+}
+function grabThumb(f,dur){
+  return new Promise(res=>{
+    const vv=document.createElement("video");vv.muted=true;vv.playsInline=true;vv.preload="auto";
+    const u=URL.createObjectURL(f);let done=false;
+    const finish=d=>{if(done)return;done=true;URL.revokeObjectURL(u);res(d)};
+    vv.onloadeddata=()=>{vv.currentTime=Math.min(dur*0.3,20)};
+    vv.onseeked=()=>{try{const c=document.createElement("canvas");c.width=480;c.height=Math.round(480*(vv.videoHeight/vv.videoWidth||9/16));c.getContext("2d").drawImage(vv,0,0,c.width,c.height);finish(c.toDataURL("image/jpeg",0.72))}catch(e){finish("thumb.jpg")}};
+    vv.onerror=()=>finish("thumb.jpg");setTimeout(()=>finish("thumb.jpg"),8000);
+    vv.src=u;
+  });
+}
+
+// ---------- analysis (rough, runs in the browser) ----------
+const HOP=128,SR=11025,HS=HOP/SR;
+function onsetEnvelope(audio){
+  const src=audio.getChannelData(0),src2=audio.numberOfChannels>1?audio.getChannelData(1):null,step=audio.sampleRate/SR;
+  const n=Math.floor(src.length/step),x=new Float32Array(n);
+  for(let i=0;i<n;i++){const j=Math.floor(i*step);x[i]=src2?(src[j]+src2[j])*0.5:src[j]}
+  const aL=Math.exp(-2*Math.PI*150/SR),aH=Math.exp(-2*Math.PI*2000/SR);
+  let lp=0,lp2=0;const F=Math.floor(n/HOP),low=new Float32Array(F),high=new Float32Array(F),rms=new Float32Array(F);
+  for(let f=0;f<F;f++){let el=0,eh=0,e=0;for(let k=f*HOP,K=k+HOP;k<K;k++){const s=x[k];lp=aL*lp+(1-aL)*s;lp2=aH*lp2+(1-aH)*s;const h=s-lp2;el+=lp*lp;eh+=h*h;e+=s*s}low[f]=Math.log1p(el*400);high[f]=Math.log1p(eh*400);rms[f]=Math.sqrt(e/HOP)}
+  const on=new Float32Array(F),lowOn=new Float32Array(F);
+  const hiOn=new Float32Array(F);
+  for(let f=1;f<F;f++){const dl=Math.max(0,low[f]-low[f-1]),dh=Math.max(0,high[f]-high[f-1]);lowOn[f]=dl;hiOn[f]=dh;on[f]=dl+0.8*dh}
+  const W=Math.round(0.4/HS),out=new Float32Array(F);let acc=0;
+  for(let f=0;f<F;f++){acc+=on[f];if(f>=W)acc-=on[f-W];out[f]=Math.max(0,on[f]-acc/Math.min(f+1,W))}
+  return {on:out,low:lowOn,hiOn,rms,lowE:low,highE:high,F};
+}
+function musicSpan(env){
+  const {rms,F}=env,W=Math.round(0.5/HS),sm=new Float32Array(F);let acc=0,mx=0;
+  for(let f=0;f<F;f++){acc+=rms[f];if(f>=W)acc-=rms[f-W];sm[f]=acc/Math.min(f+1,W);if(sm[f]>mx)mx=sm[f]}
+  let a=0,z=F-1;while(a<F&&sm[a]<mx*0.18)a++;while(z>a&&sm[z]<mx*0.12)z--;
+  // first real hit: the smoothed level lags, so look back for the first strong onset
+  const sorted=Array.from(env.on).sort((x,y)=>x-y),strong=0.2*(sorted[Math.floor(sorted.length*0.98)]||1);
+  let m=Math.max(0,a-W);while(m<a&&env.on[m]<strong)m++;
+  return {a:Math.max(0,a-W),z:Math.min(F-1,z),m};
+}
+function findBeats(env,span){
+  const {on,low}=env,{a,z}=span;
+  const minL=Math.floor(60/190/HS),maxL=Math.ceil(60/65/HS);
+  let best=0,bestL=minL;
+  const ac=L=>{let s=0;for(let f=a;f+L<=z;f++)s+=on[f]*on[f+L];return s};
+  const acs={};for(let L=minL;L<=maxL*2&&L<=z-a;L++)acs[L]=ac(L);
+  for(let L=minL;L<=maxL;L++){const bpm=60/(L*HS),w=Math.exp(-0.5*(Math.log2(bpm/120)/0.9)**2);const s=(acs[L]+0.5*(acs[2*L]||0))*w;if(s>best){best=s;bestL=L}}
+  // refine period with parabolic fit
+  const y0=acs[bestL-1]||0,y1=acs[bestL],y2=acs[bestL+1]||0,den=y0-2*y1+y2;
+  let P=bestL+(den?0.5*(y0-y2)/den:0);
+  // phase
+  let bo=0,bs=-1;for(let o=0;o<Math.ceil(P);o++){let s=0;for(let t=a+o;t<=z;t+=P)s+=on[Math.round(t)];if(s>bs){bs=s;bo=o}}
+  // track with gentle correction toward local peaks, then refit the period from the peaks and track again
+  const track=P=>{const bt=[],pks=[];let t=a+bo;const win=Math.max(2,Math.round(P*0.12));
+    while(t<=z){let pk=Math.round(t),pv=-1;for(let k=Math.round(t)-win;k<=Math.round(t)+win;k++){if(k>=0&&k<on.length&&on[k]>pv){pv=on[k];pk=k}}
+      if(pv>0.02)pks.push([bt.length,pk]);const tt=pv>0.02?t+0.4*(pk-t):t;bt.push(tt);t=tt+P}
+    return {bt,pks}};
+  let r=track(P);
+  for(let pass=0;pass<2&&r.pks.length>8;pass++){const n=r.pks.length;let sx=0,sy=0,sxx=0,sxy=0;for(const [i,k] of r.pks){sx+=i;sy+=k;sxx+=i*i;sxy+=i*k}const slope=(n*sxy-sx*sy)/(n*sxx-sx*sx);if(slope>P*0.9&&slope<P*1.1)P=slope;r=track(P)}
+  // no clicks before the drums actually start
+  const beats=r.bt.filter(f=>f>=span.m-Math.round(0.06/HS));
+  // downbeat: kick on 1 and 3, snare (high band) on 2 and 4
+  const hiOn=env.hiOn,at=(arr,i)=>{const k=Math.round(beats[i]);let m=0;for(let d=-2;d<=2;d++)m=Math.max(m,arr[k+d]||0);return m};
+  let bp=0,bv=-1e9;for(let p=0;p<4;p++){let s=0,c=0;for(let i=p;i+3<beats.length;i+=4){s+=at(low,i)+0.5*at(low,i+2)+0.6*(at(hiOn,i+1)+at(hiOn,i+3))-0.6*(at(hiOn,i)+at(hiOn,i+2));c++}if(c&&s/c>bv){bv=s/c;bp=p}}
+  const out=beats.slice(bp).map(f=>Math.round(f*HS*1000)/1000);
+  const avg=out.length>1?(out[out.length-1]-out[0])/(out.length-1):P*HS;
+  return {beats:snapBeats(on,out,avg),bpm:60/avg};
+}
+// lock each beat to the drum hit it lands on, so the click follows the drummer's real timing
+function snapBeats(on,arr,P){
+  const win=Math.max(2,Math.round(Math.min(0.05,P*0.12)/HS)),res=arr.slice();
+  for(let i=0;i<res.length;i++){
+    const f=Math.round(res[i]/HS);let pk=f,pv=-1;
+    for(let k=f-win;k<=f+win;k++){if(k>=0&&k<on.length&&on[k]>pv){pv=on[k];pk=k}}
+    let sum=0,c=0;for(let k=f-40;k<=f+40;k+=2){if(k>=0&&k<on.length){sum+=on[k];c++}}
+    if(pv>2.5*sum/(c||1))res[i]=pk*HS;
+  }
+  const ib=res.slice(1).map((x,i)=>x-res[i]).sort((x,y)=>x-y),med=ib[ib.length>>1]||P;
+  for(let i=1;i<res.length-1;i++){if(Math.abs(res[i]-res[i-1]-med)>0.15*med&&Math.abs(res[i+1]-res[i]-med)>0.15*med)res[i]=(res[i-1]+res[i+1])/2}
+  return res.map(x=>Math.round(x*1000)/1000);
+}
+function findSections(env,beats){
+  const nb=Math.floor(beats.length/4);
+  if(nb<8)return [["Section 1",0,Math.max(0,nb-1)]];
+  const feat=[];for(let b=0;b<nb;b++){const A=Math.round(beats[b*4]/HS),Z=Math.round((beats[b*4+4]??beats[beats.length-1]+0.5)/HS);let r=0,l=0,h=0,o=0,c=0;for(let f=A;f<Z&&f<env.F;f++){r+=env.rms[f];l+=env.lowE[f];h+=env.highE[f];o+=env.on[f];c++}c=c||1;feat.push([r/c,l/c,h/c,o/c])}
+  const dims=4,mean=[0,0,0,0],sd=[0,0,0,0];feat.forEach(v=>v.forEach((x,i)=>mean[i]+=x/nb));feat.forEach(v=>v.forEach((x,i)=>sd[i]+=(x-mean[i])**2/nb));
+  const zf=feat.map(v=>v.map((x,i)=>(x-mean[i])/(Math.sqrt(sd[i])||1)));
+  const avg=(s,e)=>{const m=[0,0,0,0];for(let b=s;b<e;b++)for(let i=0;i<dims;i++)m[i]+=zf[b][i]/(e-s);return m};
+  const dist=(p,q)=>Math.hypot(...p.map((x,i)=>x-q[i]));
+  // novelty at phrase boundaries (every 4 bars, plus a short ending tail)
+  const cands=[];
+  const cb=[];for(let b=4;b<=nb-2;b+=4)cb.push(b);if(nb%4>=2&&!cb.includes(nb-nb%4))cb.push(nb-nb%4);
+  for(const b of cb){const w=Math.min(4,b,nb-b);if(w<2)continue;cands.push({b,d:dist(avg(b-w,b),avg(b,b+w))})}
+  const ds=cands.map(c=>c.d),m=ds.reduce((x,y)=>x+y,0)/(ds.length||1),sdev=Math.sqrt(ds.reduce((x,y)=>x+(y-m)**2,0)/(ds.length||1));
+  const cuts=[0];[...cands].sort((x,y)=>y.d-x.d).forEach(c=>{const minGap=(c.b<=4||nb-c.b<=4)?4:8;if(c.d>m+0.3*sdev&&cuts.every(k=>Math.abs(k-c.b)>=minGap))cuts.push(c.b)});
+  cuts.sort((x,y)=>x-y);
+  // split very long stretches at their strongest inner phrase boundary
+  for(let k=0;k<cuts.length;k++){const a=cuts[k],z=cuts[k+1]??nb;if(z-a>16){const inner=cands.filter(c=>c.b>a+4&&c.b<z-4).sort((x,y)=>y.d-x.d)[0];if(inner){cuts.splice(k+1,0,inner.b);k--}}}
+  let secs=cuts.map((c,i)=>[c,(cuts[i+1]??nb)-1]);
+  if(secs.length>1&&secs[secs.length-1][1]-secs[secs.length-1][0]<1){const last=secs.pop();secs[secs.length-1][1]=last[1]}
+  return labelSections(secs,avg,dist,zf);
+}
+function labelSections(secs,avg,dist,zf){
+  const n=secs.length,F=secs.map(([a,z])=>avg(a,z+1)),E=F.map(v=>v[0]+v[1]+v[2]),L=secs.map(([a,z])=>z-a+1);
+  const pd=[];for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)pd.push(dist(F[i],F[j]));
+  const T=pd.length?pd.reduce((x,y)=>x+y,0)/pd.length*0.8:0;
+  const grp=new Array(n).fill(-1);let g=0;
+  for(let i=0;i<n;i++){if(grp[i]>=0)continue;grp[i]=g;for(let j=i+1;j<n;j++)if(grp[j]<0&&dist(F[i],F[j])<T)grp[j]=g;g++}
+  const groups=[...new Set(grp)].map(id=>({id,members:grp.map((x,i)=>x===id?i:-1).filter(i=>i>=0)}));
+  groups.forEach(G=>G.e=G.members.reduce((x,i)=>x+E[i],0)/G.members.length);
+  const rep=groups.filter(G=>G.members.length>1).sort((x,y)=>y.e-x.e);
+  const name=new Array(n).fill(null);
+  if(rep.length>=2){rep[0].members.forEach(i=>name[i]="Chorus");rep[1].members.forEach(i=>name[i]="Verse");rep.slice(2).forEach(G=>G.members.forEach(i=>name[i]="Bridge"))}
+  else if(rep.length===1){const G=rep[0],avgE=E.reduce((x,y)=>x+y,0)/n;G.members.forEach(i=>name[i]=G.e>=avgE?"Chorus":"Verse")}
+  else return secs.map(([a,z],i)=>[n>6?String(i+1):"Section "+(i+1),a,z]);
+  const firstRep=name.findIndex(x=>x),hasChorus=name.includes("Chorus");
+  const vIdx=name.map((x,i)=>x==="Verse"?i:-1).filter(i=>i>=0),verseE=vIdx.length?vIdx.reduce((x,i)=>x+E[i],0)/vIdx.length:null;
+  for(let i=0;i<n;i++){if(name[i])continue;
+    if(i<firstRep&&L[i]<=8)name[i]="Intro";
+    else if(!hasChorus&&verseE!=null&&E[i]>verseE&&i>firstRep)name[i]="Chorus";
+    else if(i===n-1)name[i]="Outro";
+    else name[i]="Bridge"}
+  const total={},seen={};name.forEach(x=>total[x]=(total[x]||0)+1);
+  return secs.map(([a,z],i)=>{const x=name[i];seen[x]=(seen[x]||0)+1;return [total[x]>1?x+" "+seen[x]:x,a,z]});
+}
+
+// ---------- player ----------
+let BEATS=SAMPLE.beats,DUR=SAMPLE.duration,BPM=SAMPLE.bpm,SECTIONS=SAMPLE.sections,cur=null;
+const v=$("v"),cv=$("cv"),g2=cv.getContext("2d");
+const bS=i=>BEATS[i*4];
+const bE=i=>BEATS[i*4+4]??DUR;
+// up to one bar of lead in before beat 1, so pickups and intro fills aren't cut off
+const preStart=()=>Math.max(0,BEATS[0]-4*(BEATS[1]-BEATS[0]));
+const barStart=i=>i===0?preStart():bS(i);
+const beatIndexAt=t=>{let lo=0,hi=BEATS.length-1;if(t<BEATS[0])return -1;while(lo<hi){const m=(lo+hi+1)>>1;if(BEATS[m]<=t)lo=m;else hi=m-1}return lo};
+const beatLen=t=>{const i=Math.max(0,Math.min(BEATS.length-2,beatIndexAt(t)));return BEATS[i+1]-BEATS[i]};
+function partsFor(si){
+  const [,s,e]=SECTIONS[si],len=e-s+1,size=len>=8?4:2,out=[];let L=0;
+  for(let b=s;b<=e;b+=size)out.push({label:"ABCDEFGHIJKL"[L++],a:b,z:Math.min(b+size-1,e)});
+  return out;
+}
+
+let ctx=null,stretch=null,stretchReady=null,musicGain,clickGain,mode="none",loadedId=null;
+let rate=1,playing=false,pos=0,t0=0,p0=0;
+let loop={on:true,a:0,z:1,name:"A"};
+let sec=0,sel=new Set([0]),custom=false,barSel=null,pending=null,countOn=true;
+const clicks=[];let clickKeys=new Set();
+
+function wrap(s){if(loop.on&&s>=loop.z){const L=loop.z-loop.a;s=loop.a+((s-loop.a)%L)}return s}
+function songAt(ct){if(!playing)return pos;if(mode==="basic")return v.currentTime;if(ct<t0)return p0;return wrap(p0+(ct-t0)*rate)}
+const outLat=()=>ctx?(ctx.outputLatency||0)+(ctx.baseLatency||0):0;
+
+function saveState(extra){if(!cur)return;const st=LS.get("pc-state-"+cur.id,{});LS.set("pc-state-"+cur.id,{...st,sec,rate,sel:[...sel],...extra})}
+
+function openItem(it){
+  if(cur&&cur.id===it.id)return;
+  pause();cur=it;
+  BEATS=it.beats;DUR=it.duration;BPM=it.bpm;SECTIONS=it.sections;
+  $("pTitle").textContent=it.title;document.title=it.title+", Pocket Covers";
+  $("mBpm").textContent=Math.round(BPM)+" BPM";
+  $("mBars").textContent=Math.floor(BEATS.length/4)+" bars, auto detected";
+  v.src=videoUrl(it);v.muted=true;
+  const st=LS.get("pc-state-"+it.id,null);
+  rate=st&&st.rate?st.rate:1;renderTempo();
+  sec=st&&st.sec!=null&&st.sec>=-1&&st.sec<SECTIONS.length?st.sec:(it.sample?1:0);
+  const ps=partsFor(Math.max(0,sec));
+  sel=new Set((st&&st.sel&&st.sel.length?st.sel:[0]).filter(i=>i<ps.length));
+  if(!sel.size)sel=new Set([0]);
+  custom=false;pending=null;loop.on=true;$("swLoop").setAttribute("aria-pressed","true");
+  renderMap();if(sec<0)selectWhole();else applySel();
+  pos=loop.a;v.currentTime=pos;
+}
+v.addEventListener("loadedmetadata",()=>{v.currentTime=pos});
+
+async function ensureAudio(){
+  if(!ctx){
+    try{if(navigator.audioSession)navigator.audioSession.type="playback"}catch(e){}
+    ctx=new (window.AudioContext||window.webkitAudioContext)();
+    musicGain=ctx.createGain();musicGain.connect(ctx.destination);
+    clickGain=ctx.createGain();clickGain.gain.value=0.6;clickGain.connect(ctx.destination);
+    stretchReady=(async()=>{if(typeof SignalsmithStretch!=="function")throw 0;SignalsmithStretch.moduleUrl=new URL("stretch.js",location.href).href;stretch=await SignalsmithStretch(ctx);stretch.connect(musicGain)})().catch(()=>{stretch=null});
+  }
+  ctx.resume();
+  if(loadedId===cur.id)return;
+  setStatus("Loading audio");
+  await stretchReady;
+  try{
+    if(!stretch)throw 0;
+    const buf=cur.sample?await (await fetch("audio.mp3")).arrayBuffer():await cur.file.arrayBuffer();
+    const ab=await ctx.decodeAudioData(buf);
+    const ch=[];for(let c=0;c<ab.numberOfChannels;c++)ch.push(ab.getChannelData(c));
+    if(ch.length===1)ch.push(ch[0]);
+    stretch.dropBuffers();
+    await stretch.addBuffers(ch);
+    mode="stretch";v.muted=true;setStatus("");
+  }catch(err){
+    mode="basic";v.muted=false;v.preservesPitch=true;
+    setStatus("Basic audio mode: high quality slowdown isn't available here, so very slow speeds may sound rough.");
+  }
+  loadedId=cur.id;
+}
+
+function cancelClicks(){const now=ctx?ctx.currentTime:0;for(const c of clicks){if(c.when>now)try{c.o.stop()}catch(e){}}clicks.length=0;clickKeys=new Set()}
+function click(when,acc){
+  const o=ctx.createOscillator(),g=ctx.createGain();
+  o.type="square";o.frequency.value=acc?1760:1180;
+  g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(acc?0.5:0.3,when+0.002);g.gain.exponentialRampToValueAtTime(0.0001,when+0.05);
+  o.connect(g);g.connect(clickGain);o.start(when);o.stop(when+0.06);
+  clicks.push({o,when});if(clicks.length>64)clicks.splice(0,32);
+}
+function schedulePlayback(at,p){
+  t0=at;p0=p;
+  if(mode==="stretch")stretch.schedule({active:true,output:at,input:p,rate,loopStart:loop.on?loop.a:0,loopEnd:loop.on?loop.z:0});
+}
+async function play(){
+  if(!cur)return;
+  await ensureAudio();
+  let p=pos;
+  if(loop.on&&(p<loop.a||p>=loop.z))p=loop.a;
+  if(!loop.on&&p>=DUR-0.1)p=preStart();
+  // D is the downbeat the count in leads into. Before the first bar we keep the lead in playing
+  // (pickups, intro fills) and lay the count in over it on the beat grid extended backwards.
+  let D;
+  if(p<BEATS[0]){D=BEATS[0]}
+  else{const bi=beatIndexAt(p),bs=bS(Math.floor(bi/4));if(p-bs>0.03)p=Math.max(bs,loop.on?loop.a:0);D=p}
+  const sb=beatLen(D),first=D-4*sb,lead=countOn?Math.max(0,p-first)/rate:0,start=ctx.currentTime+0.12+lead;
+  playing=true;cancelClicks();
+  if(countOn)for(let k=0;k<4;k++){const tt=first+k*sb;click(start+(tt-p)/rate,k===0)}
+  v.pause();v.currentTime=p;v.playbackRate=rate;
+  if(mode==="basic"){p0=p;t0=start;setTimeout(()=>{if(playing)v.play().catch(()=>{})},(start-ctx.currentTime)*1000)}
+  else schedulePlayback(start,p);
+  setPlayIcon();saveState({last:Date.now()});
+}
+function pause(){
+  if(!playing)return;
+  pos=mode==="basic"?v.currentTime:songAt(ctx.currentTime);
+  playing=false;
+  if(mode==="stretch"&&stretch)stretch.schedule({active:false,output:ctx.currentTime});
+  cancelClicks();v.pause();v.currentTime=pos;setPlayIcon();
+}
+function relaunch(p){
+  if(!playing){pos=p;v.currentTime=p;return}
+  if(mode==="basic"){v.currentTime=p;v.playbackRate=rate;return}
+  const at=ctx.currentTime+0.05;cancelClicks();schedulePlayback(at,p);
+}
+function setRate(r){
+  r=Math.max(0.25,Math.min(1,Math.round(r*100)/100));
+  if(r===rate)return;
+  const c=playing&&ctx?songAt(ctx.currentTime+0.05):pos;
+  rate=r;
+  if(playing)relaunch(c);
+  v.playbackRate=rate;renderTempo();saveState();
+}
+function setLoop(a,z,name){
+  loop.a=a;loop.z=z;loop.name=name;
+  relaunch(a);renderMap();renderReadout(songAt(ctx?ctx.currentTime:0));
+}
+function setPlayIcon(){$("pIcon").innerHTML=playing?'<path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="currentColor"/>':'<path d="M6 3l15 9-15 9z" fill="currentColor"/>';$("play").setAttribute("aria-label",playing?"Pause":"Play")}
+function setStatus(t){$("status").textContent=t}
+
+
+function frame(){
+  requestAnimationFrame(frame);
+  if(document.body.dataset.view!=="practice"||!cur)return;
+  let t=pos;
+  if(playing&&ctx){
+    if(mode==="stretch"){
+      const ct=ctx.currentTime-outLat();
+      if(ct<t0){t=p0;if(!v.paused)v.pause()}
+      else{
+        t=songAt(ct);
+        // use the frame actually on screen when the browser reports it, otherwise the decoder position
+        const d=vfDrift!=null&&performance.now()-vfAt<250?vfDrift:v.currentTime-t;
+        let want=rate;
+        if(Math.abs(d)>0.12){v.currentTime=t;vfDrift=null}
+        else if(Math.abs(d)>0.006)want=rate*(1-Math.max(-0.15,Math.min(0.15,d*2)));
+        want=Math.max(0.0625,want);
+        if(Math.abs(v.playbackRate-want)>0.002)v.playbackRate=want;
+        if(v.paused)v.play().catch(()=>{});
+      }
+    }else{
+      t=v.currentTime;
+      if(loop.on&&t>=loop.z)v.currentTime=loop.a;
+    }
+    if(!loop.on&&t>=DUR-0.05)pause();
+  }
+  if(v.videoWidth){
+    if(cv.width!==v.videoWidth){cv.width=v.videoWidth;cv.height=v.videoHeight}
+    g2.globalAlpha=rate<0.8&&playing?0.5:1;g2.drawImage(v,0,0,cv.width,cv.height);
+  }
+  renderReadout(t);
+}
+
+// compare each displayed video frame with the audio that is audible at that same moment
+let vfDrift=null,vfAt=0;
+function onVF(now,md){
+  try{if(playing&&mode==="stretch"&&ctx&&ctx.getOutputTimestamp){const ts=ctx.getOutputTimestamp();if(ts.performanceTime){const ct=ts.contextTime+(md.expectedDisplayTime-ts.performanceTime)/1000;if(ct>=t0){vfDrift=md.mediaTime-songAt(ct);vfAt=performance.now()}}}}catch(e){}
+  v.requestVideoFrameCallback(onVF);
+}
+if(v.requestVideoFrameCallback)v.requestVideoFrameCallback(onVF);
+const deg=r=>-135+(r-0.25)/0.75*270;
+function renderTempo(){
+  const pct=Math.round(rate*100);
+  $("tVal").textContent=pct+"%";
+  $("knob").setAttribute("aria-valuenow",pct);$("knob").setAttribute("aria-valuetext",pct+" percent");
+  $("kPtr").setAttribute("transform",`rotate(${deg(rate)} 70 70)`);
+  $("kArc").setAttribute("stroke-dasharray",`${(rate-0.25)/0.75*283} 400`);
+  $("cBpm").textContent=Math.round(BPM*rate);
+}
+function renderReadout(t){
+  const i=beatIndexAt(t),bar=i<0?0:Math.floor(i/4);
+  const si=SECTIONS.findIndex(([,a,z])=>bar>=a&&bar<=z);
+  $("cSec").textContent=si>=0?SECTIONS[si][0]:SECTIONS[0][0];
+  const segs=$("map").children;
+  if(segs[0])segs[0].lastElementChild.style.width=(sec<0?Math.min(100,t/DUR*100):0)+"%";
+  for(let k=0;k+1<segs.length&&k<SECTIONS.length;k++){const A=bS(SECTIONS[k][1]),Z=bE(SECTIONS[k][2]),pr=segs[k+1].lastElementChild;pr.style.width=(t>=A&&t<Z?(t-A)/(Z-A)*100:0)+"%"}
+  document.querySelectorAll(".bar").forEach(el=>el.classList.toggle("now",+el.dataset.b===bar));
+}
+const PAL=[["var(--skyD)","var(--sky)"],["var(--red)","var(--tint)"],["var(--roseD)","var(--rose)"],["var(--sageD)","var(--sage)"],["var(--skyD)","var(--sky)"],["var(--terraD)","var(--terra)"]];
+function secColor(i){
+  return ["var(--roseD)","var(--rose)"];
+  if(i<0)return ["var(--sageD)","var(--sage)"];
+  const n=SECTIONS[i][0].toLowerCase();
+  if(n.startsWith("intro"))return PAL[0];
+  if(n.startsWith("verse"))return PAL[1];
+  if(n.startsWith("chorus"))return PAL[2];
+  if(n.startsWith("bridge"))return PAL[3];
+  if(n.startsWith("outro"))return PAL[4];
+  if(n.startsWith("solo"))return PAL[5];
+  return [PAL[1],PAL[2],PAL[3],PAL[0],PAL[5]][i%5];
+}
+function renderMap(){
+  
+  $("map").innerHTML=`<button class="seg${sec<0?" cur":""}" style="--c:var(--roseD);--cl:var(--rose)" data-i="-1" aria-pressed="${sec<0}" title="Play the whole song"><span>All</span><i class="prog"></i></button>`+SECTIONS.map(([n],i)=>`<button class="seg${i===sec?" cur":""}" style="--c:${secColor(i)[0]};--cl:${secColor(i)[1]}" data-i="${i}" aria-pressed="${i===sec}" title="${esc(n)}"><span>${esc(n)}</span><i class="prog"></i></button>`).join("");
+}
+function renderParts(){
+  $("partsTitle").textContent="Blocks";
+  $("chips").hidden=$("barsrow").hidden=sec<0;
+  if(sec<0){
+    $("chips").innerHTML="";$("barsrow").innerHTML="";
+    $("blockHint").textContent="Playing the whole song from the top. Pick a section above to break it into blocks.";
+    return;
+  }
+  const [n,s,e]=SECTIONS[sec],ps=partsFor(sec),full=!custom&&sel.size===ps.length;
+  const size=(e-s+1)>=8?4:2;
+  $("blockHint").textContent=`Each letter is a ${size} bar block of this section. Tap more letters to stack them, like A then B. Or tap bars to build your own loop.`;
+  const tip=p=>p.a===p.z?`Bar ${p.a-s+1}`:`Bars ${p.a-s+1} to ${p.z-s+1}`;
+  $("chips").innerHTML=`<div class="chiprow"><button class="chip" data-k="full" aria-pressed="${full}" title="${e-s+1} bars">Full</button>${ps.map((p,i)=>`<button class="chip" data-k="${i}" aria-pressed="${!custom&&sel.has(i)}" title="${tip(p)}">${esc(p.label)}</button>`).join("")}</div>`;
+  layoutBars();
+  $("barsrow").innerHTML=Array.from({length:e-s+1},(_,k)=>{const b=s+k,inl=loop.on&&barStart(b)>=loop.a-0.01&&bS(b)<loop.z-0.01;return `<button class="bar${inl?" in":""}" data-b="${b}" aria-label="Bar ${k+1}">${k+1}</button>`}).join("");
+}
+function layoutBars(){
+  if(sec<0)return;
+  const [,s,e]=SECTIONS[sec],n=e-s+1,size=n>=8?4:2,w=$("barsrow").clientWidth||600;
+  const cols=(w-(n-1)*4)/n>=40?n:size;
+  $("barsrow").style.gridTemplateColumns=`repeat(${cols},minmax(0,1fr))`;
+}
+new ResizeObserver(()=>{if(cur)layoutBars()}).observe($("barsrow"));
+function applySel(){
+  const ps=partsFor(sec),idx=[...sel].sort((x,y)=>x-y),lo=idx[0],hi=idx[idx.length-1];
+  const full=sel.size===ps.length;
+  custom=false;pending=null;barSel=null;
+  setLoop(barStart(ps[lo].a),bE(ps[hi].z),full?SECTIONS[sec][0]:idx.map(i=>ps[i].label).join("+"));
+  if(!loop.on){loop.on=true;$("swLoop").setAttribute("aria-pressed","true");renderMap()}
+  renderParts();saveState();
+}
+function selectFull(){sel=new Set(partsFor(sec).map((_,i)=>i));applySel()}
+function toggleLetter(i){
+  const n=partsFor(sec).length,arr=[...sel].sort((x,y)=>x-y),lo=arr[0],hi=arr[arr.length-1];
+  if(custom||sel.size===0||sel.size===n)sel=new Set([i]);
+  else if(!sel.has(i)){const a=Math.min(lo,i),z=Math.max(hi,i);sel=new Set();for(let k=a;k<=z;k++)sel.add(k)}
+  else if(sel.size===1)return;
+  else if(i===lo||i===hi)sel.delete(i);
+  else{sel=new Set();for(let k=lo;k<=i;k++)sel.add(k)}
+  applySel();
+}
+function selectWhole(){
+  sec=-1;custom=false;pending=null;
+  setLoop(preStart(),DUR,"All");
+  if(!loop.on){loop.on=true;$("swLoop").setAttribute("aria-pressed","true")}
+  renderMap();renderParts();saveState();
+}
+function selectSection(i){
+  i=Math.max(-1,Math.min(SECTIONS.length-1,i));
+  if(i<0){selectWhole();return}
+  sec=i;sel=new Set([0]);applySel();renderMap();
+}
+
+$("vid").addEventListener("click",()=>playing?pause():play());
+$("play").onclick=()=>playing?pause():play();
+$("chips").addEventListener("click",e=>{const c=e.target.closest(".chip");if(!c)return;if(c.dataset.k==="full")selectFull();else toggleLetter(+c.dataset.k)});
+$("barsrow").addEventListener("click",e=>{
+  const c=e.target.closest(".bar");if(!c)return;const b=+c.dataset.b,s=SECTIONS[sec][1];
+  // bars stack like letters: tap more bars to extend the loop, tap an end bar to drop it
+  if(!custom||!barSel)barSel={lo:b,hi:b};
+  else if(b<barSel.lo)barSel.lo=b;
+  else if(b>barSel.hi)barSel.hi=b;
+  else if(barSel.lo===barSel.hi)return;
+  else if(b===barSel.lo)barSel.lo++;
+  else if(b===barSel.hi)barSel.hi--;
+  else barSel.hi=b;
+  custom=true;pending=null;
+  const a=barSel.lo,z=barSel.hi;
+  setLoop(barStart(a),bE(z),a===z?"Bar "+(a-s+1):(a-s+1)+" to "+(z-s+1));
+  if(!loop.on){loop.on=true;$("swLoop").setAttribute("aria-pressed","true");renderMap()}
+  renderParts();
+});
+let sw=null,swiped=false;
+$("map").addEventListener("pointerdown",e=>{sw={x:e.clientX,y:e.clientY};swiped=false});
+$("map").addEventListener("pointerup",e=>{if(!sw)return;const dx=e.clientX-sw.x,dy=e.clientY-sw.y;sw=null;if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)){swiped=true;selectSection(sec+(dx<0?1:-1))}});
+$("map").addEventListener("click",e=>{if(swiped){swiped=false;return}const seg=e.target.closest(".seg");if(seg)selectSection(+seg.dataset.i)});
+function toggle(id,get,set){const el=$(id);el.onclick=()=>{set(!get());el.setAttribute("aria-pressed",get())}}
+toggle("swCount",()=>countOn,x=>countOn=x);
+toggle("swLoop",()=>loop.on,x=>{const c=playing&&ctx?songAt(ctx.currentTime+0.05):pos;loop.on=x;renderMap();renderParts();if(playing&&mode==="stretch"){cancelClicks();schedulePlayback(ctx.currentTime+0.05,c)}});
+
+const knob=$("knob");let drag=null,lastApply=0;
+knob.addEventListener("pointerdown",e=>{drag={y:e.clientY,r:rate};knob.setPointerCapture(e.pointerId)});
+knob.addEventListener("pointermove",e=>{if(!drag)return;const r=drag.r+(drag.y-e.clientY)/300;const now=performance.now();if(now-lastApply>60){lastApply=now;setRate(r)}});
+knob.addEventListener("pointerup",e=>{if(drag){setRate(drag.r+(drag.y-e.clientY)/300);drag=null}});
+knob.addEventListener("dblclick",()=>setRate(1));
+knob.addEventListener("wheel",e=>{e.preventDefault();setRate(rate+(e.deltaY<0?0.01:-0.01))},{passive:false});
+knob.addEventListener("keydown",e=>{if(e.key==="ArrowUp"||e.key==="ArrowRight"){e.preventDefault();e.stopPropagation();setRate(rate+0.05)}if(e.key==="ArrowDown"||e.key==="ArrowLeft"){e.preventDefault();e.stopPropagation();setRate(rate-0.05)}});
+document.addEventListener("keydown",e=>{
+  if(document.body.dataset.view!=="practice"||e.target.matches("input,textarea"))return;
+  if(e.code==="Space"){e.preventDefault();playing?pause():play()}
+  else if(e.key==="ArrowRight"){e.preventDefault();selectSection(sec+1)}
+  else if(e.key==="ArrowLeft"){e.preventDefault();selectSection(sec-1)}
+  else if(e.key==="ArrowUp"){e.preventDefault();setRate(rate+0.05)}
+  else if(e.key==="ArrowDown"){e.preventDefault();setRate(rate-0.05)}
+});
+
+window.__pc={vf:()=>vfDrift,items:()=>items,findBeats,onsetEnvelope,musicSpan,findSections};
+requestAnimationFrame(frame);
+loadItems().then(route);
+if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+}
+</script>
+</body>
+</html>
