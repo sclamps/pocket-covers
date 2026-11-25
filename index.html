@@ -86,6 +86,14 @@ h2{margin:0;font-size:17px;font-weight:800}
 .readouts b.hot{color:var(--ink)}
 .readouts .secname{font-family:Archivo,sans-serif;font-weight:750}
 .switches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.cilen{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.cilen .lab{white-space:nowrap}
+.segpick{display:flex;gap:4px;padding:3px;border:1px solid var(--line2);border-radius:9px;background:var(--bg)}
+.segpick button{min-height:38px;min-width:76px;padding:0 12px;border:0;border-radius:6px;background:transparent;cursor:pointer;font-weight:650;font-size:14px;white-space:nowrap}
+.segpick button:hover{background:var(--hover)}
+.segpick button[aria-pressed=true]{background:var(--red);color:#fff}
+.segpick button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.cilen.off{opacity:.45}
 .sw{display:flex;align-items:center;justify-content:center;gap:9px;min-height:44px;padding:0 10px;border-radius:8px;border:1px solid var(--line2);background:var(--bg);cursor:pointer;font-weight:650;font-size:14px;white-space:nowrap}
 .sw:hover{background:var(--hover)}
 .sw i{width:9px;height:9px;border-radius:50%;background:var(--off);flex:none}
@@ -318,6 +326,7 @@ body.dragging #libView .addtile{border-color:var(--tint)}
         <button class="sw" id="swCount" aria-pressed="true"><i></i>Count in</button>
         <button class="sw" id="swLoop" aria-pressed="true"><i></i>Loop</button>
       </div>
+      <div class="cilen" role="group" aria-label="Count in length"><span class="lab">Count in length</span><div class="segpick"><button id="ci1" aria-pressed="true">1 bar</button><button id="ci2" aria-pressed="false">2 bars</button></div></div>
       <p class="status" id="status"></p>
     </div>
   </div>
@@ -679,9 +688,9 @@ async function play(){
   let D;
   if(p<BEATS[0]){D=BEATS[0]}
   else{const bi=beatIndexAt(p),bs=bS(Math.floor(bi/4));if(p-bs>0.03)p=Math.max(bs,loop.on?loop.a:0);D=p}
-  const sb=beatLen(D),first=D-4*sb,lead=countOn?Math.max(0,p-first)/rate:0,start=ctx.currentTime+0.12+lead;
+  const sb=beatLen(D),first=D-4*countBars*sb,lead=countOn?Math.max(0,p-first)/rate:0,start=ctx.currentTime+0.12+lead;
   playing=true;cancelClicks();
-  if(countOn)for(let k=0;k<4;k++){const tt=first+k*sb;click(start+(tt-p)/rate,k===0)}
+  if(countOn)for(let k=0;k<4*countBars;k++){const tt=first+k*sb;click(start+(tt-p)/rate,k%4===0)}
   v.pause();v.currentTime=p;v.playbackRate=rate;
   if(mode==="basic"){p0=p;t0=start;setTimeout(()=>{if(playing)v.play().catch(()=>{})},(start-ctx.currentTime)*1000)}
   else schedulePlayback(start,p);
@@ -866,7 +875,13 @@ $("map").addEventListener("pointerdown",e=>{sw={x:e.clientX,y:e.clientY};swiped=
 $("map").addEventListener("pointerup",e=>{if(!sw)return;const dx=e.clientX-sw.x,dy=e.clientY-sw.y;sw=null;if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)){swiped=true;selectSection(sec+(dx<0?1:-1))}});
 $("map").addEventListener("click",e=>{if(swiped){swiped=false;return}const seg=e.target.closest(".seg");if(seg)selectSection(+seg.dataset.i)});
 function toggle(id,get,set){const el=$(id);el.onclick=()=>{set(!get());el.setAttribute("aria-pressed",get())}}
-toggle("swCount",()=>countOn,x=>countOn=x);
+toggle("swCount",()=>countOn,x=>{countOn=x;renderCountIn();LS.set("pc-countin",{on:countOn,bars:countBars})});
+let countBars=1;
+function renderCountIn(){$("ci1").setAttribute("aria-pressed",countBars===1);$("ci2").setAttribute("aria-pressed",countBars===2);$("swCount").setAttribute("aria-pressed",countOn);document.querySelector(".cilen").classList.toggle("off",!countOn)}
+function setCountBars(n){countBars=n;if(!countOn)countOn=true;renderCountIn();LS.set("pc-countin",{on:countOn,bars:countBars})}
+$("ci1").onclick=()=>setCountBars(1);
+$("ci2").onclick=()=>setCountBars(2);
+{const ci=LS.get("pc-countin",null);if(ci){countOn=ci.on!==false;countBars=ci.bars===2?2:1}renderCountIn()}
 toggle("swLoop",()=>loop.on,x=>{const c=playing&&ctx?songAt(ctx.currentTime+0.05):pos;loop.on=x;renderMap();renderParts();if(playing&&mode==="stretch"){cancelClicks();schedulePlayback(ctx.currentTime+0.05,c)}});
 
 const knob=$("knob");let drag=null,lastApply=0;

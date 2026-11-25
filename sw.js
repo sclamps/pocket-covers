@@ -1,6 +1,6 @@
 // Pocket Covers service worker: keeps the app and the sample working offline.
 // Bump VERSION whenever you deploy changes so devices pick up the new files.
-const VERSION = "pc-v4";
+const VERSION = "pc-v5";
 const CORE = [
   "./",
   "index.html",
